@@ -1,0 +1,32 @@
+from flask import Blueprint, jsonify
+
+movies_bp = Blueprint("movies", __name__)
+
+@movies_bp.route("/search", methods=["GET"])
+def search():
+    return jsonify({"message": "Searching success"})
+
+
+@movies_bp.route("/detail/<id>", methods=["GET"])
+def get_movie_by_id(id):
+    return jsonify({"movie_id": id})
+
+
+@movies_bp.route("/genre/<genre>", methods=["GET"])
+def get_movies_by_genre(genre):
+    return jsonify({"genre": genre})
+
+
+@movies_bp.route("/upcoming", methods=["GET"])
+def get_upcoming_movies():
+    return jsonify({"message": "Getting upcoming movies success"})
+
+
+@movies_bp.route("/trending", methods=["GET"])
+def get_trending_movies():
+    return jsonify({"message": "Getting trending movies success"})
+
+
+@movies_bp.route("/trailer", methods=["GET"])
+def get_trailers():
+    return jsonify({"message": "Getting trailers success"})

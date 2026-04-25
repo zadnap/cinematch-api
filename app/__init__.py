@@ -5,9 +5,9 @@ from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
-load_dotenv()
 
 def create_app():
+    load_dotenv()
     app = Flask(__name__)
 
     app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
@@ -19,7 +19,13 @@ def create_app():
 
     with app.app_context():
         from . import models 
-        from .routes import bp
-        app.register_blueprint(bp)
+
+        from app.routes.auth_routes import auth_bp
+        from app.routes.movie_routes import movies_bp
+        from app.routes.user_routes import user_bp
+
+        app.register_blueprint(auth_bp, url_prefix="/auth")
+        app.register_blueprint(movies_bp, url_prefix="/movies")
+        app.register_blueprint(user_bp, url_prefix="/user")
 
     return app
