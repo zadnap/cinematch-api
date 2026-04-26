@@ -15,7 +15,12 @@ class AuthService:
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password_hash, password):
-            access_token = create_access_token(identity=str(user.id))
+            access_token = create_access_token(
+                identity=str(user.id),
+                additional_claims={
+                    "username": user.username,
+                }
+            )
             
             return {
                 "message": "Sign in successfully",

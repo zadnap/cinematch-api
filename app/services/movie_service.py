@@ -1,9 +1,5 @@
 class MovieService:
     @staticmethod
-    def get_all_favourites():
-        return {"message": "Getting favourite movies success"}
-
-    @staticmethod
     def get_details(movie_id):
         return {"movie_id": movie_id, "title": "Example Movie", "status": "success"}
 

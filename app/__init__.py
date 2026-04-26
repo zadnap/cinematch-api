@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 
 db = SQLAlchemy()
 
@@ -16,6 +17,11 @@ def create_app():
 
     db.init_app(app)
     JWTManager(app)
+    CORS(
+        app,
+        resources={r"/*": {"origins": os.getenv("CORS_ORIGINS")}},
+        supports_credentials=True
+    )
 
     with app.app_context():
         from . import models 
