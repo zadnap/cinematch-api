@@ -31,7 +31,13 @@ def get_upcoming_movies():
 
 @movies_bp.route("/trending", methods=["GET"])
 def get_trending_movies():
-    return jsonify({"message": "Getting trending movies success"})
+    page = request.args.get("page", 1, type=int)
+    data = MovieService.get_trending(page)
+    
+    if not data.get("success"):
+        return jsonify(data), 500
+
+    return jsonify(data), 200
 
 
 @movies_bp.route("/trailer", methods=["GET"])
