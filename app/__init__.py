@@ -17,9 +17,17 @@ def create_app():
 
     db.init_app(app)
     JWTManager(app)
+
+    cors_origins = os.getenv("CORS_ORIGINS", "")
+    origins_list = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
+
     CORS(
         app,
-        resources={r"/*": {"origins": os.getenv("CORS_ORIGINS")}},
+        resources={
+            r"/auth/*": {"origins": origins_list},
+            r"/movies/*": {"origins": origins_list},
+            r"/user/*": {"origins": origins_list},
+        },
         supports_credentials=True
     )
 
