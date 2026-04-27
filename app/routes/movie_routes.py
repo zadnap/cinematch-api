@@ -1,4 +1,5 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
+from app.services.movie_service import MovieService
 
 movies_bp = Blueprint("movies", __name__)
 
@@ -19,7 +20,13 @@ def get_movies_by_genre(genre):
 
 @movies_bp.route("/upcoming", methods=["GET"])
 def get_upcoming_movies():
-    return jsonify({"message": "Getting upcoming movies success"})
+    page = request.args.get("page", 1, type=int)
+    data = MovieService.get_upcoming(page)
+    
+    if not data.get("success"):
+        return jsonify(data), 500
+
+    return jsonify(data), 200
 
 
 @movies_bp.route("/trending", methods=["GET"])
