@@ -157,8 +157,63 @@ class MovieService:
 
 
     @staticmethod
-    def get_by_genre(genre):
-        return {"genre": genre, "movies": []}
+    def get_genres():
+        try:
+            data = TMDBClient.get("/genre/movie/list", {"language": "en-US"})
+
+            return {
+                "success": True,
+                "genres": data.get("genres", [])
+            }
+
+        except Exception as e:
+            print(f"[TMDB ERROR] {e}")
+            return {
+                "success": False,
+                "error": {
+                    "message": "Failed to fetch genres"
+                }
+            }
+        
+
+    @staticmethod
+    def get_by_genre(genre_id, page=1):
+        page = normalize_page(page)
+        try:
+            data = TMDBClient.get(
+                "/discover/movie",
+                {
+                    "with_genres": genre_id,
+                    "page": page
+                }
+            )
+            movies = [
+                {
+                    "id": m.get("id"),
+                    "title": m.get("title"),
+                    "year": m.get("release_date", "")[:4] if m.get("release_date") else None,
+                    "rating": round(m.get("vote_average", 0), 1),
+                    "posterSrc": (
+                        f"https://image.tmdb.org/t/p/w342{m.get('poster_path')}"
+                        if m.get("poster_path") else None
+                    ),
+                }
+                for m in data.get("results", [])
+            ]
+            return {
+                "success": True,
+                "movies": movies,
+                "total_pages": normalize_page(data.get("total_pages", 1))
+            }
+
+        except Exception as e:
+            print(f"[TMDB ERROR] {e}")
+            return {
+                "success": False,
+                "error": {
+                    "message": "Failed to fetch movies by genre"
+                }
+            }
 
 
     @staticmethod
