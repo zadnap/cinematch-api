@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.services.movie_service import MovieService
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
 movies_bp = Blueprint("movies", __name__)
 
@@ -34,10 +35,13 @@ def get_all_genres():
 
     return jsonify(data), 200
 
+
 @movies_bp.route("/genres/<string:id>", methods=["GET"])
+@jwt_required(optional=True)
 def get_movies_by_genre(id):
+    user_id = get_jwt_identity()
     page = request.args.get("page", 1, type=int)
-    data = MovieService.get_by_genre(id, page)
+    data = MovieService.get_by_genre(id, page, user_id)
     
     if not data.get("success"):
         return jsonify(data), 500
@@ -46,9 +50,11 @@ def get_movies_by_genre(id):
 
 
 @movies_bp.route("/upcoming", methods=["GET"])
+@jwt_required(optional=True)
 def get_upcoming_movies():
+    user_id = get_jwt_identity()
     page = request.args.get("page", 1, type=int)
-    data = MovieService.get_upcoming(page)
+    data = MovieService.get_upcoming(page, user_id)
     
     if not data.get("success"):
         return jsonify(data), 500
@@ -57,9 +63,11 @@ def get_upcoming_movies():
 
 
 @movies_bp.route("/trending", methods=["GET"])
+@jwt_required(optional=True)
 def get_trending_movies():
+    user_id = get_jwt_identity()
     page = request.args.get("page", 1, type=int)
-    data = MovieService.get_trending(page)
+    data = MovieService.get_trending(page, user_id)
     
     if not data.get("success"):
         return jsonify(data), 500

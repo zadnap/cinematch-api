@@ -1,6 +1,8 @@
 from app.clients.tmdb_client import TMDBClient
 from concurrent.futures import ThreadPoolExecutor
 from app.utils.pagination import normalize_page
+from app.services.recommend_service import RecommendService
+from app.utils.rerank_movies import rerank_movies
 
 class MovieService:
     @staticmethod
@@ -120,7 +122,7 @@ class MovieService:
 
 
     @staticmethod
-    def get_trending(page):
+    def get_trending(page, user_id=None):
         page = normalize_page(page)
         try:
             data = TMDBClient.get("/movie/popular", {"page": page})
@@ -138,6 +140,10 @@ class MovieService:
                 }
                 for m in data.get("results", [])
             ]
+
+            if user_id:
+                rec_ids = RecommendService.recommend(user_id, top_k=200)
+                movies = rerank_movies(movies, rec_ids)
 
             return {
                 "success": True,
@@ -228,7 +234,7 @@ class MovieService:
         
 
     @staticmethod
-    def get_by_genre(genre_id, page=1):
+    def get_by_genre(genre_id, page=1, user_id=None):
         page = normalize_page(page)
         try:
             data = TMDBClient.get(
@@ -251,6 +257,11 @@ class MovieService:
                 }
                 for m in data.get("results", [])
             ]
+
+            if user_id:
+                rec_ids = RecommendService.recommend(user_id, top_k=200)
+                movies = rerank_movies(movies, rec_ids)
+
             return {
                 "success": True,
                 "movies": movies,
@@ -268,7 +279,7 @@ class MovieService:
 
 
     @staticmethod
-    def get_upcoming(page):
+    def get_upcoming(page, user_id=None):
         page = normalize_page(page)
         try:
             data = TMDBClient.get("/movie/upcoming", {"page": page})
@@ -286,6 +297,10 @@ class MovieService:
                 }
                 for m in data.get("results", [])
             ]
+
+            if user_id:
+                rec_ids = RecommendService.recommend(user_id, top_k=200)
+                movies = rerank_movies(movies, rec_ids)
 
             return {
                 "success": True,
@@ -343,6 +358,7 @@ class MovieService:
                 "message": "Failed to fetch upcoming movies"
             }}
         
+    
     @staticmethod
     def get_featured_movie():
         try:
