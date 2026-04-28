@@ -152,8 +152,59 @@ class MovieService:
 
 
     @staticmethod
-    def search_movies(query=None):
-        return {"message": f"Searching success for: {query}"}
+    def search_movies(query, page=1):
+        page = normalize_page(page)
+        try:
+            if not query:
+                return {
+                    "success": False,
+                    "error": {"message": "Missing search query"}
+                }
+
+            data = TMDBClient.get(
+                "/search/movie",
+                {
+                    "query": query,
+                    "page": page,
+                    "language": "en-US"
+                }
+            )
+            results = data.get("results", [])
+            movies = [
+                {
+                    "id": m.get("id"),
+                    "title": m.get("title"),
+                    "year": m.get("release_date", "")[:4] if m.get("release_date") else None,
+                    "rating": round(m.get("vote_average", 0), 1),
+                    "posterSrc": (
+                        f"https://image.tmdb.org/t/p/w342{m.get('poster_path')}"
+                        if m.get("poster_path") else None
+                    ),
+                }
+                for m in results
+            ]
+            if not movies:
+                return {
+                    "success": False,
+                    "error": {
+                        "message": f"Could not find movies named '{query}'"
+                    }
+                }
+
+            return {
+                "success": True,
+                "movies": movies,
+                "total_pages": normalize_page(data.get("total_pages", 1))
+            }
+
+        except Exception as e:
+            print(f"[TMDB ERROR] {e}")
+            return {
+                "success": False,
+                "error": {
+                    "message": "Failed to search movies"
+                }
+            }
 
 
     @staticmethod

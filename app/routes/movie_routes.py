@@ -5,7 +5,14 @@ movies_bp = Blueprint("movies", __name__)
 
 @movies_bp.route("/search", methods=["GET"])
 def search():
-    return jsonify({"message": "Searching success"})
+    query = request.args.get("query")
+    page = request.args.get("page", 1, type=int)
+    data = MovieService.search_movies(query, page)
+    
+    if not data.get("success"):
+        return jsonify(data), 500
+
+    return jsonify(data), 200
 
 
 @movies_bp.route("/detail/<string:id>", methods=["GET"])
