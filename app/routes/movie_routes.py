@@ -8,12 +8,17 @@ def search():
     return jsonify({"message": "Searching success"})
 
 
-@movies_bp.route("/detail/<id>", methods=["GET"])
+@movies_bp.route("/detail/<string:id>", methods=["GET"])
 def get_movie_by_id(id):
-    return jsonify({"movie_id": id})
+    data = MovieService.get_details(id)
+    
+    if not data.get("success"):
+        return jsonify(data), 500
+
+    return jsonify(data), 200
 
 
-@movies_bp.route("/genre/<genre>", methods=["GET"])
+@movies_bp.route("/genre/<string:genre>", methods=["GET"])
 def get_movies_by_genre(genre):
     return jsonify({"genre": genre})
 
