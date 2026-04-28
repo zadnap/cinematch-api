@@ -69,3 +69,12 @@ def get_preview_trailers():
         return jsonify(data), 500
 
     return jsonify(data), 200
+
+@movies_bp.route("/featured", methods=["GET"])
+def get_featured_movie():
+    data = MovieService.get_featured_movie()
+    
+    if not data.get("success"):
+        return jsonify(data), 500
+
+    return jsonify(data), 200

@@ -291,3 +291,58 @@ class MovieService:
             return {"success": False, "error": {
                 "message": "Failed to fetch upcoming movies"
             }}
+        
+    @staticmethod
+    def get_featured_movie():
+        try:
+            def fetch(endpoint, params=None):
+                return TMDBClient.get(endpoint, params)
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                popular_data, genre_data = executor.map(
+                    lambda args: fetch(*args),
+                    [
+                        ("/movie/popular", {"language": "en-US", "page": 1}),
+                        ("/genre/movie/list", {"language": "en-US"}),
+                    ],
+                )
+            movies = popular_data.get("results", [])
+            genres = genre_data.get("genres", [])
+
+            if not movies:
+                raise Exception("No popular movies found")
+            
+            movie = movies[0]
+            genre_map = {g["id"]: g["name"] for g in genres}
+            tags = [
+                movie.get("release_date", "")[:4],
+                *[
+                    genre_map.get(gid)
+                    for gid in movie.get("genre_ids", [])
+                    if genre_map.get(gid)
+                ],
+            ]
+            result = {
+                "id": movie.get("id"),
+                "title": movie.get("title"),
+                "desc": movie.get("overview"),
+                "tags": tags,
+                "backdropSrc": (
+                    f"https://image.tmdb.org/t/p/original{movie.get('backdrop_path')}"
+                    if movie.get("backdrop_path")
+                    else None
+                ),
+            }
+
+            return {
+                "success": True,
+                "movie": result
+            }
+
+        except Exception as e:
+            print(f"[TMDB ERROR] {e}")
+            return {
+                "success": False,
+                "error": {
+                    "message": "Failed to fetch featured movie"
+                }
+            }
