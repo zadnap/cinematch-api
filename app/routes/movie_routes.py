@@ -40,6 +40,12 @@ def get_trending_movies():
     return jsonify(data), 200
 
 
-@movies_bp.route("/trailer", methods=["GET"])
-def get_trailers():
-    return jsonify({"message": "Getting trailers success"})
+@movies_bp.route("/trailers", methods=["GET"])
+def get_preview_trailers():
+    limit = request.args.get("limit", 5, type=int)
+    data = MovieService.get_trailers(limit)
+    
+    if not data.get("success"):
+        return jsonify(data), 500
+
+    return jsonify(data), 200
