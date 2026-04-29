@@ -10,7 +10,7 @@ class AuthService:
         password = data.get("password")
 
         if not username or not password:
-            return {"message": "Missing username or password"}, 400
+            return {"success": False, "message": "Missing username or password"}, 400
         
         user = User.query.filter_by(username=username).first()
 
@@ -23,6 +23,7 @@ class AuthService:
             )
             
             return {
+                "success": True, 
                 "message": "Sign in successfully",
                 "access_token": access_token,
                 "user": {
@@ -31,7 +32,7 @@ class AuthService:
                 }
             }, 200
         
-        return {"message": "Incorrect username or password"}, 401
+        return {"success": False, "message": "Incorrect username or password"}, 401
 
 
     @staticmethod
@@ -41,13 +42,13 @@ class AuthService:
         password_confirmation = data.get("password_confirmation")
 
         if not username or not password or not password_confirmation:
-            return {"message": "Missing username, password or password confirmation"}, 400
+            return {"success": False, "message": "Missing username, password or password confirmation"}, 400
         
         if password != password_confirmation:
-            return {"message": "Password does not match its confirmation"}, 422
+            return {"success": False, "message": "Password does not match its confirmation"}, 422
 
         if User.query.filter_by(username=username).first():
-            return {"message": "Username already exists"}, 400
+            return {"success": False, "message": "Username already exists"}, 400
 
         hashed_password = generate_password_hash(password)
         new_user = User(
@@ -58,7 +59,7 @@ class AuthService:
         try:
             db.session.add(new_user)
             db.session.commit()
-            return {"message": "Account created successfully"}, 201
+            return {"success": True, "message": "Account created successfully"}, 201
         except Exception as e:
             db.session.rollback()
-            return {"message": "Server error", "error": str(e)}, 500
+            return {"success": False, "message": "Server error", "error": str(e)}, 500
