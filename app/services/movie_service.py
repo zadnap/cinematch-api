@@ -234,13 +234,14 @@ class MovieService:
         
 
     @staticmethod
-    def get_by_genre(genre_id, page=1, user_id=None):
+    def get_by_genres(genre_ids, page, user_id=None):
         page = normalize_page(page)
         try:
+            genre_string = ",".join(genre_ids)
             data = TMDBClient.get(
                 "/discover/movie",
                 {
-                    "with_genres": genre_id,
+                    "with_genres": genre_string,
                     "page": page
                 }
             )
@@ -257,7 +258,6 @@ class MovieService:
                 }
                 for m in data.get("results", [])
             ]
-
             if user_id:
                 rec_ids = RecommendService.recommend(user_id, top_k=200)
                 movies = rerank_movies(movies, rec_ids)
@@ -273,9 +273,13 @@ class MovieService:
             return {
                 "success": False,
                 "error": {
-                    "message": "Failed to fetch movies by genre"
+                    "message": "Failed to fetch movies by genres"
                 }
             }
+        
+    @staticmethod
+    def get_by_multiple_genres(genre_ids, page, user_id):
+        page = normalize_page(page)
 
 
     @staticmethod
