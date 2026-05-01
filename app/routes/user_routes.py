@@ -5,8 +5,52 @@ from app.services.user_service import UserService
 user_bp = Blueprint("user", __name__)
 
 @user_bp.route("/onboarding", methods=["POST"])
+@jwt_required()
 def onboard_user():
-    return jsonify({"message": "Onboarding success"})
+    user_id = get_jwt_identity()
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "success": False,
+            "error": {"message": "Invalid JSON"}
+        }), 400
+    
+    if not isinstance(genres, list):
+        return jsonify({
+            "success": False,
+            "error": {"message": "Genres must be an array"}
+        }), 400
+
+    if not isinstance(movies, list):
+        return jsonify({
+            "success": False,
+            "error": {"message": "Movies must be an array"}
+        }), 400
+
+    if len(genres) < 3:
+        return jsonify({
+            "success": False,
+            "error": {"message": "Please select at least 3 genres"}
+        }), 400
+
+    if not all(isinstance(g, int) for g in genres):
+        return jsonify({
+            "success": False,
+            "error": {"message": "Invalid genre IDs"}
+        }), 400
+
+    if not all(isinstance(m, int) for m in movies):
+        return jsonify({
+            "success": False,
+            "error": {"message": "Invalid movie IDs"}
+        }), 400
+
+    genres = list(set(genres))
+    movies = list(set(movies))
+
+    result, status_code = UserService.onboard_user(user_id, genres, movies)
+    return jsonify(result), status_code
 
 
 @user_bp.route("/favourites", methods=["GET"])

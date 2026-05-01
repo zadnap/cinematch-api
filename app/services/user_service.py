@@ -6,13 +6,9 @@ from sqlalchemy.exc import IntegrityError
 
 class UserService:
     @staticmethod
-    def onboard_user(data):
-        username = data.get("username", "Guest")
-        return {
-            "status": "success",
-            "message": f"Welcome {username}! Onboarding successful.",
-            "user_id": 123
-        }
+    def onboard_user(user_id, genres, movies):
+        # TODO: finish onboarding logic
+        return { "success": True }, 200
 
     @staticmethod
     def get_favourites(user_id, page=1, per_page=20):
