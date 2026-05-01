@@ -7,8 +7,16 @@ from sqlalchemy.exc import IntegrityError
 class UserService:
     @staticmethod
     def onboard_user(user_id, genres, movies):
-        # TODO: finish onboarding logic
-        return { "success": True }, 200
+        user = User.query.get(user_id)
+
+        if not user:
+            return {"success": False, "message": "User not found"}, 404
+        
+        user.is_onboarded = True
+        
+        db.session.commit()
+
+        return {"success": True}, 200
 
     @staticmethod
     def get_favourites(user_id, page=1, per_page=20):
@@ -183,3 +191,24 @@ class UserService:
                     "message": "Failed to remove favourite movie"
                 }
             }
+        
+    @staticmethod
+    def get_user_data(user_id):
+        user = User.query.get(user_id)
+
+        if not user:
+            return {
+                "success": False,
+                "error": {
+                    "message": "User does not exist"
+                }
+            }
+
+        return {
+            "success": True,
+            "data": {
+                "id": user.id,
+                "username": user.username,
+                "is_onboarded": user.is_onboarded
+            }
+        }
