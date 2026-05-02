@@ -5,7 +5,6 @@ from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import timedelta
-from app.utils.str_to_bool import str_to_bool
 
 db = SQLAlchemy()
 
@@ -16,12 +15,7 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
-    app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
-    app.config["JWT_COOKIE_SECURE"] = str_to_bool(os.getenv("JWT_COOKIE_SECURE", "False"))
-    app.config["JWT_COOKIE_SAMESITE"] = os.getenv("JWT_COOKIE_SAMESITE")
-    app.config["JWT_COOKIE_CSRF_PROTECT"] = False
-    app.config["JWT_ACCESS_COOKIE_PATH"] = "/"
-    app.config["JWT_REFRESH_COOKIE_PATH"] = "/auth/refresh"
+    app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
