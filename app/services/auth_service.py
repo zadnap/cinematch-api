@@ -3,74 +3,53 @@ from app.models import User
 from flask_jwt_extended import create_access_token, create_refresh_token
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.utils.validators import validate_password, validate_username
+from app.utils.response import success, error
 
 class AuthService:
     @staticmethod
     def refresh_token(user_id): 
-        user = User.query.get(user_id)
-        if not user:
-            return {"success": False, "message": "User not found"}, 404
-
         new_access_token = create_access_token(identity=user_id)
-        response = {
-            "success": True, 
-            "access_token": new_access_token,
-            "message": "Token refresh successful"
-        }
+        return success({ "access_token": new_access_token }, "Token refreshed")
 
-        return response, 200
 
     @staticmethod
     def sign_in_user(data):
-        username = data.get("username").strip()
+        username = (data.get("username") or "").strip()
         password = data.get("password")
-
         if not username or not password:
-            return {"success": False, "message": "Missing username or password"}, 400
+            return error("MISSING_CREDENTIALS", "Username and password are required")
         
         user = User.query.filter_by(username=username).first()
-
-        if user and check_password_hash(user.password_hash, password):
-            access_token = create_access_token(identity=str(user.id))
-            refresh_token = create_refresh_token(identity=str(user.id))
-            response = {
-                "success": True,
-                "message": "Sign in successfully",
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "user": {
-                    "id": user.id,
-                    "username": user.username
-                }
-            }
-
-            return response, 200
+        if not user or not check_password_hash(user.password_hash, password):
+            return error("INVALID_CREDENTIALS", "Incorrect username or password", 401)
         
-        return {"success": False, "message": "Incorrect username or password"}, 401
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
+        return success({ "access_token": access_token, "refresh_token": refresh_token }, "Sign in successfully")
 
 
     @staticmethod
     def sign_up_user(data):
-        username = data.get("username")
+        username = (data.get("username") or "").strip()
         password = data.get("password")
         password_confirmation = data.get("password_confirmation")
 
         if not username or not password or not password_confirmation:
-            return {"success": False, "message": "Missing username, password or password confirmation"}, 400
+            return error("MISSING_FIELDS", "Missing username, password or password confirmation")
         
-        error = validate_username(username)
-        if error:
-            return {"success": False, "message": error}, 422
+        errorMsg = validate_username(username)
+        if errorMsg:
+            return error("INVALID_USERNAME", errorMsg, 422)
 
-        error = validate_password(password)
-        if error:
-            return {"success": False, "message": error}, 422    
+        errorMsg = validate_password(password)
+        if errorMsg:
+            return error("INVALID_PASSWORD", errorMsg, 422)
         
         if password != password_confirmation:
-            return {"success": False, "message": "Password does not match its confirmation"}, 422
+            return error("PASSWORD_MISMATCH", "Password does not match its confirmation", 422)
 
         if User.query.filter_by(username=username).first():
-            return {"success": False, "message": "Username already exists"}, 400
+            return error("USERNAME_EXISTS", "Username already exists", 409)
 
         hashed_password = generate_password_hash(password)
         new_user = User(
@@ -81,7 +60,8 @@ class AuthService:
         try:
             db.session.add(new_user)
             db.session.commit()
-            return {"success": True, "message": "Account created successfully"}, 201
+            return success({}, "Account created successfully", 201)
         except Exception as e:
+            print(f"[SIGN UP ERROR] {e}")
             db.session.rollback()
-            return {"success": False, "message": "Server error", "error": str(e)}, 500
+            return error("SERVER_ERROR", "Server error", 500)

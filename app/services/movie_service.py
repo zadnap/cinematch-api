@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from app.utils.pagination import normalize_page
 from app.services.recommend_service import RecommendService
 from app.utils.rerank_movies import rerank_movies
+from app.utils.response import success, error
 
 class MovieService:
     @staticmethod
@@ -103,22 +104,15 @@ class MovieService:
                 }
                 for r in review_data.get("results", [])
             ]
-
-            return {
-                "success": True,
-                "movie": movie,
-                "casts": casts,
-                "reviews": reviews,
-            }
+            return success(
+                {"movie": movie, "casts": casts, "reviews": reviews }, 
+                "Getting movie details successfully", 
+                200
+            )
 
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to fetch movie details"
-                }
-            }
+            print(f"[MOVIE DETAILS ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to fetch movie details", 500)
 
 
     @staticmethod
@@ -145,16 +139,14 @@ class MovieService:
                 rec_ids = RecommendService.recommend(user_id, top_k=200)
                 movies = rerank_movies(movies, rec_ids)
 
-            return {
-                "success": True,
-                "movies": movies,
-                "total_pages": normalize_page(data.get("total_pages", 1))
-            }
+            return success(
+                { "movies": movies, "total_pages": normalize_page(data.get("total_pages", 1)) },
+                "Getting trending movies successfully"
+            ) 
+        
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {"success": False, "error": {
-                "message": "Failed to fetch trending movies"
-            }}
+            print(f"[TRENDING MOVIE ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to fetch trending movies", 500)
 
 
     @staticmethod
@@ -162,10 +154,7 @@ class MovieService:
         page = normalize_page(page)
         try:
             if not query:
-                return {
-                    "success": False,
-                    "error": {"message": "Missing search query"}
-                }
+                return error("MISSING_PARAMS", "Missing search query")
 
             data = TMDBClient.get(
                 "/search/movie",
@@ -190,52 +179,40 @@ class MovieService:
                 for m in results
             ]
             if not movies:
-                return {
-                    "success": False,
-                    "error": {
-                        "message": f"Could not find movies named '{query}'"
-                    }
-                }
+                return error("MOVIE_NOT_FOUND", f"Could not find movies named '{query}'", 404)
 
-            return {
-                "success": True,
-                "movies": movies,
-                "total_pages": normalize_page(data.get("total_pages", 1))
-            }
+            return success(
+                { "movies": movies, "total_pages": normalize_page(data.get("total_pages", 1)) },
+                "Searching movies successfully"
+            )
 
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to search movies"
-                }
-            }
+            print(f"[SEARCH MOVIE ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to search movies", 500)
 
 
     @staticmethod
     def get_genres():
         try:
             data = TMDBClient.get("/genre/movie/list", {"language": "en-US"})
-
-            return {
-                "success": True,
-                "genres": data.get("genres", [])
-            }
-
+            return success({ "genres": data.get("genres", []) }, "Getting genres successfully")
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to fetch genres"
-                }
-            }
+            print(f"[GENRES ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to fetch genres", 500)
         
 
     @staticmethod
-    def get_by_genres(genre_ids, page, user_id=None):
+    def get_by_genres(ids, page, user_id=None):
+        if not ids:
+            return error("MISSING_PARAMS", "ids is required")
+
+        genre_ids = [g.strip() for g in ids.split(",")]
+
+        if not all(g.isdigit() for g in genre_ids):
+            return error("INVALID_PARAMS", "Invalid genre ids")
+        
         page = normalize_page(page)
+        
         try:
             genre_string = ",".join(genre_ids)
             data = TMDBClient.get(
@@ -262,24 +239,14 @@ class MovieService:
                 rec_ids = RecommendService.recommend(user_id, top_k=200)
                 movies = rerank_movies(movies, rec_ids)
 
-            return {
-                "success": True,
-                "movies": movies,
-                "total_pages": normalize_page(data.get("total_pages", 1))
-            }
+            return success(
+                { "movies": movies, "total_pages": normalize_page(data.get("total_pages", 1)) },
+                "Getting movies by genres successfully"
+            )
 
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to fetch movies by genres"
-                }
-            }
-        
-    @staticmethod
-    def get_by_multiple_genres(genre_ids, page, user_id):
-        page = normalize_page(page)
+            print(f"[MOVIES BY GENRES ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to fetch movies by genres", 500)
 
 
     @staticmethod
@@ -306,16 +273,13 @@ class MovieService:
                 rec_ids = RecommendService.recommend(user_id, top_k=200)
                 movies = rerank_movies(movies, rec_ids)
 
-            return {
-                "success": True,
-                "movies": movies,
-                "total_pages": normalize_page(data.get("total_pages", 1))
-            }
+            return success(
+                { "movies": movies, "total_pages": normalize_page(data.get("total_pages", 1)) },
+                "Getting upcoming movies successfully"
+            )
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {"success": False, "error": {
-                "message": "Failed to fetch upcoming movies"
-            }}
+            print(f"[UPCOMING MOVIES ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to fetch upcoming movies", 500)
 
 
     @staticmethod
@@ -346,7 +310,8 @@ class MovieService:
                             if m.get("backdrop_path") else None,
                             "trailerKey": trailer.get("key"),
                         }
-                except:
+                except Exception as e:
+                    print(f"[TRAILER ERROR] {e}")
                     return None
 
             with ThreadPoolExecutor(max_workers=5) as executor:
@@ -354,13 +319,11 @@ class MovieService:
 
             trailers = [r for r in results if r]
 
-            return {"success": True, "trailers": trailers}
+            return success({ "trailers": trailers }, "Getting featured trailers successfullly")
 
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {"success": False, "error": {
-                "message": "Failed to fetch upcoming movies"
-            }}
+            print(f"[FEATURED TRAILERS ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to fetch featured trailers", 500)
         
     
     @staticmethod
@@ -404,16 +367,8 @@ class MovieService:
                 ),
             }
 
-            return {
-                "success": True,
-                "movie": result
-            }
+            return success({ "movie": result }, "Getting featured movie successfully")
 
         except Exception as e:
-            print(f"[TMDB ERROR] {e}")
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to fetch featured movie"
-                }
-            }
+            print(f"[FEATURED MOVIE ERROR] {e}")
+            return error("SERVER_ERROR", "Failed to fetch featured movie", 500)

@@ -3,32 +3,46 @@ from app.models import User, Favourite
 from app.clients.tmdb_client import TMDBClient
 from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.exc import IntegrityError
+from app.utils.response import success, error
+from app.services.recommend_service import RecommendService
 
 class UserService:
     @staticmethod
-    def onboard_user(user_id, genres, movies):
+    def onboard_user(user_id, data):
         user = User.query.get(user_id)
 
         if not user:
-            return {"success": False, "message": "User not found"}, 404
+            return error("USER_NOT_FOUND", "User not found", 404)
+        
+        if not data:
+            return error("INVALID_ONBOARDING_DATA", "Invalid JSON")
+        
+        genres = data.get("genres")
+        movies = data.get("movies")
+
+        if not isinstance(genres, list):
+            return error("INVALID_ONBOARDING_DATA", "Genres must be array")
+
+        if not isinstance(movies, list):
+            return error("INVALID_ONBOARDING_DATA", "Movies must be array")
+
+        genres = list(set(genres))
+        movies = list(set(movies))
         
         user.is_onboarded = True
-        
         db.session.commit()
 
-        return {"success": True}, 200
+        RecommendService.onboard(user_id, genres, movies)
+        
+        return success({}, "Onboarded successfully")
+
 
     @staticmethod
     def get_favourites(user_id, page=1, per_page=20):
         try:
             user = User.query.get(user_id)
             if not user:
-                return {
-                    "success": False,
-                    "error": {
-                        "message": "User not found"
-                    }
-                }
+                return error("USER_NOT_FOUND", "User not found", 404)
             pagination = Favourite.query\
                 .filter_by(user_id=user_id)\
                 .order_by(Favourite.added_at.desc())\
@@ -49,71 +63,48 @@ class UserService:
                         "year": data.get("release_date", "")[:4] if data.get("release_date") else None,
                         "rating": round(data.get("vote_average", 0), 1),
                     }
-                except:
-                    return None 
+                except Exception as e:
+                    print(f"[TMDB ERROR] {e}")
+                    return None
 
-            with ThreadPoolExecutor(max_workers=10) as executor:
+            with ThreadPoolExecutor(max_workers=5) as executor:
                 results = list(executor.map(fetch_movie, tmdb_ids))
 
             movies = [m for m in results if m] 
-
-            return {
-                "success": True,
+            return success({
                 "favourites": movies,
                 "page": page,
                 "total_pages": pagination.pages
-            }
+            }, "Getting favourite movies successfully")
 
         except Exception as e:
             print(f"[FAVOURITES ERROR] {e}")
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to fetch favourite movies"
-                }
-            }
+            return error("SERVER_ERROR", "Failed to fetch favourite movies", 500)
+
 
     @staticmethod
     def add_to_favourites(user_id, movie_id):
         try:
             user = User.query.get(user_id)
             if not user:
-                return {
-                    "success": False,
-                    "error": {
-                        "message": "User not found"
-                    }
-                }
+                return error("USER_NOT_FOUND", "User not found", 404)
+            
             favourite = Favourite(
                 user_id=user_id,
                 tmdb_id=movie_id
             )
             db.session.add(favourite)
             db.session.commit()
-            return {
-                "success": True,
-                "movie_id": movie_id,
-                "message": "Added movie to favourites successfully"
-            }
+            return success({}, "Added movie to favourites successfully")
 
         except IntegrityError:
             db.session.rollback()
-            return {
-                "success": True,
-                "movie_id": movie_id,
-                "message": "Movie already in favourites"
-            }
+            return success({}, "Movie already in favourites")
 
         except Exception as e:
             db.session.rollback()
             print(f"[ADD FAVOURITE ERROR] {e}")
-
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to add favourite movie"
-                }
-            }
+            return error("SERVER_ERROR", "Failed to add favourite movie", 500)
         
     
     @staticmethod
@@ -121,94 +112,50 @@ class UserService:
         try:
             user = User.query.get(user_id)
             if not user:
-                return {
-                    "success": False,
-                    "error": {
-                        "message": "User not found"
-                    }
-                }
+                return error("USER_NOT_FOUND", "User not found", 404)
 
             existing = Favourite.query.filter_by(
                 user_id=user_id,
                 tmdb_id=movie_id
             ).first()
-
-            return {
-                "success": True,
-                "isFavourite": existing is not None
-            }
+            return success({ "is_favourite": existing is not None }, "Check for favourite movie successfully")
 
         except Exception as e:
             print(f"[CHECK FAVOURITE ERROR] {e}")
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to check favourite"
-                }
-            }
+            return error("SERVER_ERROR", "Failed to check favourite", 500)
         
+
     @staticmethod
     def remove_from_favourites(user_id, movie_id):
         try:
             user = User.query.get(user_id)
             if not user:
-                return {
-                    "success": False,
-                    "error": {
-                        "message": "User not found"
-                    }
-                }
+                return error("USER_NOT_FOUND", "User not found", 404)
 
             favourite = Favourite.query.filter_by(
                 user_id=user_id,
                 tmdb_id=movie_id
             ).first()
-
             if not favourite:
-                return {
-                    "success": False,
-                    "error": {
-                        "message": "Favourite not found"
-                    }
-                }
+                return success({}, "Already removed or not found")
 
             db.session.delete(favourite)
             db.session.commit()
-
-            return {
-                "success": True,
-                "movie_id": movie_id,
-                "message": "Removed from favourites successfully"
-            }
+            return success({}, "Removed from favourites successfully")
 
         except Exception as e:
             db.session.rollback()
             print(f"[REMOVE FAVOURITE ERROR] {e}")
-
-            return {
-                "success": False,
-                "error": {
-                    "message": "Failed to remove favourite movie"
-                }
-            }
+            return error("SERVER_ERROR", "Failed to remove favourite movie", 500)
         
+
     @staticmethod
     def get_user_data(user_id):
         user = User.query.get(user_id)
-
         if not user:
-            return {
-                "success": False,
-                "error": {
-                    "message": "User does not exist"
-                }
-            }
+            return error("USER_NOT_FOUND", "User not found", 404)
 
-        return {
-            "success": True,
-            "data": {
-                "id": user.id,
-                "username": user.username,
-                "is_onboarded": user.is_onboarded
-            }
-        }
+        return success(
+            { "id": user.id, "username": user.username, "is_onboarded": user.is_onboarded }, 
+            "Getting user's data successfully"
+        )
