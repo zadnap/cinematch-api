@@ -2,10 +2,15 @@ from app import db
 from app.models import User
 from flask_jwt_extended import create_access_token, create_refresh_token
 from werkzeug.security import check_password_hash, generate_password_hash
+from app.utils.validators import validate_password, validate_username
 
 class AuthService:
     @staticmethod
     def refresh_token(user_id): 
+        user = User.query.get(user_id)
+        if not user:
+            return {"success": False, "message": "User not found"}, 404
+
         new_access_token = create_access_token(identity=user_id)
         response = {
             "success": True, 
@@ -17,7 +22,7 @@ class AuthService:
 
     @staticmethod
     def sign_in_user(data):
-        username = data.get("username")
+        username = data.get("username").strip()
         password = data.get("password")
 
         if not username or not password:
@@ -52,6 +57,14 @@ class AuthService:
 
         if not username or not password or not password_confirmation:
             return {"success": False, "message": "Missing username, password or password confirmation"}, 400
+        
+        error = validate_username(username)
+        if error:
+            return {"success": False, "message": error}, 422
+
+        error = validate_password(password)
+        if error:
+            return {"success": False, "message": error}, 422    
         
         if password != password_confirmation:
             return {"success": False, "message": "Password does not match its confirmation"}, 422
