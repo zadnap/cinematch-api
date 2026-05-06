@@ -27,7 +27,6 @@ class UserService:
             return error("INVALID_ONBOARDING_DATA", "Movies must be array")
 
         genres = list(set(genres))
-        movies = list(set(movies))
         
         user.is_onboarded = True
         db.session.commit()
