@@ -4,6 +4,7 @@ from app.utils.pagination import normalize_page
 from app.services.recommend_service import RecommendService
 from app.utils.rerank_movies import rerank_movies
 from app.utils.response import success, error
+from datetime import datetime
 
 class MovieService:
     @staticmethod
@@ -23,6 +24,16 @@ class MovieService:
                         f"/movie/{movie_id}/reviews",
                     ],
                 )
+
+            release_date = movie_data.get("release_date")
+            year = None
+
+            if release_date:
+                try:
+                    year = datetime.strptime(release_date, "%Y-%m-%d").year
+                except ValueError:
+                    pass
+
             us_release = next(
                 (r for r in release_data.get("results", []) if r.get("iso_3166_1") == "US"),
                 None,
@@ -45,6 +56,7 @@ class MovieService:
             movie = {
                 "id": movie_data.get("id"),
                 "title": movie_data.get("title"),
+                "year": year,
                 "posterSrc": (
                     f"https://image.tmdb.org/t/p/w500{movie_data.get('poster_path')}"
                     if movie_data.get("poster_path") else None
