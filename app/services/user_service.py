@@ -1,5 +1,5 @@
 from app import db
-from app.models import User, Favourite
+from app.models import User, Favourite, Movie, Genre
 from app.clients.tmdb_client import TMDBClient
 from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.exc import IntegrityError
@@ -46,7 +46,7 @@ class UserService:
                 .filter_by(user_id=user_id)\
                 .order_by(Favourite.added_at.desc())\
                 .paginate(page=page, per_page=per_page, error_out=False)
-            tmdb_ids = [f.tmdb_id for f in pagination.items]
+            movie_ids = [f.movie_id for f in pagination.items]
 
             def fetch_movie(movie_id):
                 try:
@@ -67,7 +67,7 @@ class UserService:
                     return None
 
             with ThreadPoolExecutor(max_workers=5) as executor:
-                results = list(executor.map(fetch_movie, tmdb_ids))
+                results = list(executor.map(fetch_movie, movie_ids))
 
             movies = [m for m in results if m] 
             return success({
@@ -82,23 +82,46 @@ class UserService:
 
 
     @staticmethod
-    def add_to_favourites(user_id, movie_id):
+    def add_to_favourites(user_id, movie):
+        movie_id = movie.get("id")
+        title = movie.get("title")
+        genre_ids = [g["id"] for g in movie.get("genres", [])]
+
         try:
             user = User.query.get(user_id)
             if not user:
                 return error("USER_NOT_FOUND", "User not found", 404)
-            
+
+            existing_movie = Movie.query.get(movie_id)
+
+            if not existing_movie:
+                new_movie = Movie(
+                    id=movie_id,
+                    title=title
+                )
+
+                if genre_ids:
+                    genres = Genre.query.filter(Genre.id.in_(genre_ids)).all()
+                    new_movie.genres.extend(genres)
+
+                db.session.add(new_movie)
+
             favourite = Favourite(
                 user_id=user_id,
-                tmdb_id=movie_id
+                movie_id=movie_id
             )
+
             db.session.add(favourite)
             db.session.commit()
+
             return success({}, "Added movie to favourites successfully")
 
-        except IntegrityError:
+        except IntegrityError as e:
             db.session.rollback()
-            return success({}, "Movie already in favourites")
+            if "_user_movie_uc" in str(e.orig):
+                return success({}, "Movie already in favourites")
+
+            return error("DB_ERROR", "Database error", 500)
 
         except Exception as e:
             db.session.rollback()
@@ -115,7 +138,7 @@ class UserService:
 
             existing = Favourite.query.filter_by(
                 user_id=user_id,
-                tmdb_id=movie_id
+                movie_id=movie_id
             ).first()
             return success({ "is_favourite": existing is not None }, "Check for favourite movie successfully")
 
@@ -133,7 +156,7 @@ class UserService:
 
             favourite = Favourite.query.filter_by(
                 user_id=user_id,
-                tmdb_id=movie_id
+                movie_id=movie_id
             ).first()
             if not favourite:
                 return success({}, "Already removed or not found")

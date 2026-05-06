@@ -28,8 +28,8 @@ def get_user_favourites(user):
 @sign_in_required
 @onboard_required
 def add_movie_to_favourites(user):
-    movie_id = request.get_json().get("movie_id")
-    result, status_code = UserService.add_to_favourites(user.id, movie_id)
+    movie = request.get_json().get("movie")
+    result, status_code = UserService.add_to_favourites(user.id, movie)
     return jsonify(result), status_code
 
 
