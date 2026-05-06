@@ -232,6 +232,7 @@ class MovieService:
                         f"https://image.tmdb.org/t/p/w342{m.get('poster_path')}"
                         if m.get("poster_path") else None
                     ),
+                    "genres": m.get("genre_ids", [])
                 }
                 for m in data.get("results", [])
             ]
