@@ -25,12 +25,10 @@ def get_all_genres():
 
 
 @movies_bp.route("/by-genres", methods=["GET"])
-@jwt_required(optional=True)
 def get_movies_by_genres():
-    user_id = get_jwt_identity()
     page = request.args.get("page", 1, type=int)
     ids = request.args.get("ids")
-    result, status_code = MovieService.get_by_genres(ids, page, user_id)
+    result, status_code = MovieService.get_by_genres(ids, page)
     return jsonify(result), status_code
 
 

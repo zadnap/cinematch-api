@@ -214,7 +214,7 @@ class MovieService:
         
 
     @staticmethod
-    def get_by_genres(ids, page, user_id=None):
+    def get_by_genres(ids, page):
         if not ids:
             return error("MISSING_PARAMS", "ids is required")
 
@@ -248,9 +248,6 @@ class MovieService:
                 }
                 for m in data.get("results", [])
             ]
-            if user_id:
-                rec_ids = RecommendService.recommend(user_id, top_k=200)
-                movies = rerank_movies(movies, rec_ids)
 
             return success(
                 { "movies": movies, "total_pages": normalize_page(data.get("total_pages", 1)) },

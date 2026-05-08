@@ -19,23 +19,11 @@ ARTIFACTS_PATH = "ml/artifacts"
 PROCESSED_DATA_PATH = "ml/data/processed_data"
 RAW_DATA_PATH = "ml/data/raw_data"
 
-_user_embeddings = None
-_movie_embeddings = None
-_movie_ids = None
-
-def load_artifacts():
-    global _user_embeddings, _movie_embeddings, _movie_ids
-
-    if _user_embeddings is None:
-        # Os embeddings são carregados on-the-fly durante recomendação
-        # Comentar para agora, pois os arquivos não existem ainda
-        # _user_embeddings = np.load(os.path.join(ARTIFACTS_PATH, "user_embeddings.npy"))
-        # _movie_embeddings = np.load(os.path.join(ARTIFACTS_PATH, "movie_embeddings.npy"))
-        # _movie_ids = np.load(os.path.join(ARTIFACTS_PATH, "movie_ids.npy"))
-        pass
-
 def get_top_k_recommendations(model, target_user_id, all_movie_vectors, k=10):    
-    user_vector = model.user_model.predict(np.array([target_user_id]), verbose=0)
+    user_vector = model.user_model.predict(
+        np.array([target_user_id], dtype=np.int32),
+        verbose=0
+    )
     
     scores = np.dot(all_movie_vectors, user_vector.T).flatten()
 
@@ -55,7 +43,6 @@ def mapping_movie_id_to_tmdb_id(movie_ids):
 
 
 def recommend_movies(user_id, top_k=200):
-    load_artifacts()
     top_tmdb_ids = []
 
     model = TwoTowerModel(user_model, movie_model, movie_dataset)
