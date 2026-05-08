@@ -128,7 +128,7 @@ class MovieService:
 
 
     @staticmethod
-    def get_trending(page, user_id=None):
+    def get_trending(page):
         page = normalize_page(page)
         try:
             data = TMDBClient.get("/movie/popular", {"page": page})
@@ -146,10 +146,6 @@ class MovieService:
                 }
                 for m in data.get("results", [])
             ]
-
-            if user_id:
-                rec_ids = RecommendService.recommend(user_id, top_k=200)
-                movies = rerank_movies(movies, rec_ids)
 
             return success(
                 { "movies": movies, "total_pages": normalize_page(data.get("total_pages", 1)) },
@@ -260,7 +256,7 @@ class MovieService:
 
 
     @staticmethod
-    def get_upcoming(page, user_id=None):
+    def get_upcoming(page):
         page = normalize_page(page)
         try:
             data = TMDBClient.get("/movie/upcoming", {"page": page})
@@ -278,11 +274,7 @@ class MovieService:
                 }
                 for m in data.get("results", [])
             ]
-
-            if user_id:
-                rec_ids = RecommendService.recommend(user_id, top_k=200)
-                movies = rerank_movies(movies, rec_ids)
-
+            
             return success(
                 { "movies": movies, "total_pages": normalize_page(data.get("total_pages", 1)) },
                 "Getting upcoming movies successfully"
@@ -382,3 +374,71 @@ class MovieService:
         except Exception as e:
             print(f"[FEATURED MOVIE ERROR] {e}")
             return error("SERVER_ERROR", "Failed to fetch featured movie", 500)
+        
+    @staticmethod
+    def get_recommended_movies(user_id, page):
+        page = normalize_page(page)
+
+        try:
+            rec_ids = RecommendService.recommend(user_id, top_k=200)
+
+            if not rec_ids:
+                return success(
+                    {
+                        "movies": [],
+                        "total_pages": 0
+                    },
+                    "No recommendations found"
+                )
+
+            per_page = 20
+            start = (page - 1) * per_page
+            end = start + per_page
+            paged_ids = rec_ids[start:end]
+
+            def fetch_movie(movie_id):
+                try:
+                    m = TMDBClient.get(f"/movie/{movie_id}")
+
+                    return {
+                        "id": m.get("id"),
+                        "posterSrc": (
+                            f"https://image.tmdb.org/t/p/w342{m.get('poster_path')}"
+                            if m.get("poster_path")
+                            else None
+                        ),
+                        "title": m.get("title"),
+                        "year": (
+                            m.get("release_date", "")[:4]
+                            if m.get("release_date")
+                            else None
+                        ),
+                        "rating": round(m.get("vote_average", 0), 1),
+                    }
+
+                except Exception as e:
+                    print(f"[RECOMMENDED MOVIE FETCH ERROR] {movie_id}: {e}")
+                    return None
+
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                results = list(executor.map(fetch_movie, paged_ids))
+
+            movies = [m for m in results if m]
+
+            total_pages = (len(rec_ids) + per_page - 1) // per_page
+
+            return success(
+                {
+                    "movies": movies,
+                    "total_pages": total_pages
+                },
+                "Getting recommended movies successfully"
+            )
+
+        except Exception as e:
+            print(f"[RECOMMENDED MOVIES ERROR] {e}")
+            return error(
+                "SERVER_ERROR",
+                "Failed to fetch recommended movies",
+                500
+            )

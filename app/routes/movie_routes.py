@@ -33,20 +33,16 @@ def get_movies_by_genres():
 
 
 @movies_bp.route("/upcoming", methods=["GET"])
-@jwt_required(optional=True)
 def get_upcoming_movies():
-    user_id = get_jwt_identity()
     page = request.args.get("page", 1, type=int)
-    result, status_code = MovieService.get_upcoming(page, user_id)
+    result, status_code = MovieService.get_upcoming(page)
     return jsonify(result), status_code
 
 
 @movies_bp.route("/trending", methods=["GET"])
-@jwt_required(optional=True)
 def get_trending_movies():
-    user_id = get_jwt_identity()
     page = request.args.get("page", 1, type=int)
-    result, status_code = MovieService.get_trending(page, user_id)
+    result, status_code = MovieService.get_trending(page)
     return jsonify(result), status_code
 
 
@@ -60,4 +56,12 @@ def get_preview_trailers():
 @movies_bp.route("/featured", methods=["GET"])
 def get_featured_movie():
     result, status_code = MovieService.get_featured_movie()
+    return jsonify(result), status_code
+
+@movies_bp.route("/recommend", methods=["GET"])
+@jwt_required()
+def get_recommended_movies():
+    user_id = get_jwt_identity()
+    page = request.args.get("page", 1, type=int)
+    result, status_code = MovieService.get_recommended_movies(user_id, page)
     return jsonify(result), status_code
