@@ -4,7 +4,7 @@ from app.models import db, UserGenrePreference
 class RecommendService:
     @staticmethod
     def recommend(user_id, top_k=200):
-        top_tmdb_ids = recommend_movies(user_id, top_k)
+        top_tmdb_ids = recommend_movies(int(user_id), top_k)
         return top_tmdb_ids
     
 

@@ -57,10 +57,10 @@ GLOBAL_MOVIE_SCORES = prepare_global_movie_scores(ratings_df, movies_df, movie2m
 def get_best_k_films_for_user(user_id, k=10):
     liked_genres_set = set()
     # Kiểm tra xem user_id có trong bảng user features chưa
-    user_exists = (user_features_df['user_id'] == user_id).any()
+    user_exists = (user_features_df['user_id'] == user_id + ID_OFFSET).any()
     
     if user_exists:
-        user_row = user_features_df[user_features_df['user_id'] == user_id].iloc[0]
+        user_row = user_features_df[user_features_df['user_id'] == user_id + ID_OFFSET].iloc[0]
         genre_columns = [col for col in user_row.index if col.endswith('_avg')]
         user_genres_avg = user_row[genre_columns]
         liked_genres = user_genres_avg[user_genres_avg > 3.8].index.str.replace('_avg', '').tolist()
@@ -106,7 +106,14 @@ def get_top_k_recommendations(model, target_user_id, all_movie_vectors, k=10):
 
 def mapping_movie_id_to_tmdb_id(movie_ids):
     links_df = pd.read_csv(os.path.join(RAW_DATA_PATH, "links.csv"))
-    result = links_df[links_df["movieId"].isin(movie_ids)].set_index("movieId").loc[movie_ids, "tmdbId"].tolist()
+    result = (
+        links_df[links_df["movieId"].isin(movie_ids)]
+        .set_index("movieId")
+        .loc[movie_ids, "tmdbId"]
+        .dropna()
+        .astype(int)
+        .tolist()
+    )
     return result
 
 def cold_start_recommendation(user_id, top_k=10):

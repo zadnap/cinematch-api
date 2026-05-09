@@ -398,7 +398,7 @@ class MovieService:
 
             def fetch_movie(movie_id):
                 try:
-                    m = TMDBClient.get(f"/movie/{movie_id}")
+                    m = TMDBClient.get(f"/movie/{str(movie_id)}")
 
                     return {
                         "id": m.get("id"),
