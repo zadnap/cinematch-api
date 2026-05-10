@@ -1,7 +1,5 @@
 import os
-
 import pandas as pd
-import numpy as np
 import re
 
 PROCESSED_DATA_PATH = "ml/data/processed_data"

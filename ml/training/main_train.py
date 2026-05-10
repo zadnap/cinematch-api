@@ -1,9 +1,7 @@
 import os
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 # --- LẤY DỮ LIỆU TỪ FILE DATASET_LOADER ---
 from ml.training.dataset_loader import (
@@ -16,7 +14,7 @@ from ml.models.two_towers_model import model
 
 ARTIFACTS_PATH = "ml/artifacts"
 
-checkpoint = tf.keras.callbacks.ModelCheckpoint(
+checkpoint = ModelCheckpoint(
     os.path.join(ARTIFACTS_PATH, 'two_tower_best_weights.weights.h5'), 
     monitor='val_loss', 
     mode='min', 
@@ -24,7 +22,7 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
     save_weights_only=True
 )
 
-early_stopping = tf.keras.callbacks.EarlyStopping(
+early_stopping = EarlyStopping(
     monitor='val_loss', 
     patience=3, # Dừng nếu sau 3 epochs val loss không tăng
     restore_best_weights=True
