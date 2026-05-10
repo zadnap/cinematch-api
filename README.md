@@ -18,7 +18,7 @@
 2. Create virtual environment
 
    ```bash
-   python -m venv venv
+   python3.11 -m venv venv
    ```
 
 3. Activate virtual environment
@@ -44,5 +44,5 @@
 5. Run the server
 
    ```bash
-   python run.py
+   flask run
    ```
