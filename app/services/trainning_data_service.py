@@ -3,7 +3,7 @@ from init_db import GENRES
 from sqlalchemy.orm import joinedload
 from app.utils.format_genre import format_genres
 
-ID_OFFSET = 200948
+ID_OFFSET = 200947
 
 class TrainingDataService:
     @staticmethod

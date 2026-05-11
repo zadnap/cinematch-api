@@ -63,11 +63,16 @@ if __name__ == "__main__":
     # user_features['year_avg'] = user_features['user_id'].map(year_mean_series).fillna(0.0)
 
     # Tính điểm trung bình cho từng thể loại
+    total_ratings_per_user = merged_df.groupby('user_id')['rating'].count()
     for genre in genres_dummies.columns:
         genre_ratings = merged_df['rating'].where(merged_df[genre] == 1)
-        mean_series = genre_ratings.groupby(merged_df['user_id']).mean()
+        
+        # Tính TỔNG ĐIỂM RATING của riêng thể loại này cho từng user
+        sum_genre_ratings = genre_ratings.groupby(merged_df['user_id']).sum()
+        custom_avg_series = sum_genre_ratings / total_ratings_per_user
+
         avg_col_name = genre + '_avg'
-        user_features[avg_col_name] = user_features['user_id'].map(mean_series).fillna(0.0)
+        user_features[avg_col_name] = user_features['user_id'].map(custom_avg_series).fillna(0.0)
 
     export_to_csv(user_features, os.path.join(PROCESSED_DATA_PATH, "user_features.csv"))
 

@@ -12,7 +12,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # --- LẤY BIẾN TỪ FILE DATASET_LOADER ---
 from ml.training.dataset_loader import (
