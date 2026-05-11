@@ -63,7 +63,7 @@ class TrainingDataService:
         return [
             [
                 movie.id,
-                movie.title,
+                f"{movie.title} ({movie.release_year})" if movie.release_year else movie.title,
                 format_genres(movie.genres)
             ]
             for movie in movies
