@@ -4,7 +4,7 @@ from app.clients.tmdb_client import TMDBClient
 from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.exc import IntegrityError
 from app.utils.response import success, error
-from app.services.recommend_service import RecommendService
+from app.models import db, UserGenrePreference
 
 class UserService:
     @staticmethod
@@ -29,11 +29,50 @@ class UserService:
         genres = list(set(genres))
         
         user.is_onboarded = True
-        db.session.commit()
 
-        RecommendService.onboard(user_id, genres, movies)
-        
-        return success({}, "Onboarded successfully")
+        for genre_id in list(set(genres)):
+            new_pref = UserGenrePreference(user_id=user_id, genre_id=genre_id, avg_score=4.0)
+            db.session.add(new_pref)
+            
+        for movie_data in movies:
+            movie_id = movie_data.get('id')
+            movie_title = movie_data.get('title')
+            movie_genres = movie_data.get('genres', []) 
+
+            existing_movie = Movie.query.get(movie_id)
+            if not existing_movie:
+                new_movie = Movie(id=movie_id, title=movie_title)
+                if movie_genres:
+                    db_genres = Genre.query.filter(Genre.id.in_(movie_genres)).all()
+                    new_movie.genres.extend(db_genres)
+                db.session.add(new_movie)
+
+            is_fav_exists = Favourite.query.filter_by(user_id=user_id, movie_id=movie_id).first()
+    
+            if not is_fav_exists:
+                new_fav = Favourite(user_id=user_id, movie_id=movie_id)
+                db.session.add(new_fav)
+    
+            for g_id in movie_genres:
+                existing_pref = UserGenrePreference.query.filter_by(
+                    user_id=user_id, 
+                    genre_id=g_id
+                ).first()
+
+                if existing_pref:
+                    if existing_pref.avg_score < 5.0:
+                        existing_pref.avg_score += 0.5
+                else:
+                    new_pref = UserGenrePreference(user_id=user_id, genre_id=g_id, avg_score=0.5)
+                    db.session.add(new_pref)
+
+        try:
+            db.session.commit()
+            return success({}, "Onboarded successfully")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[ONBOARD ERROR] {e}")
+            return error("ONBOARDING_ERROR", str(e), 500)
 
 
     @staticmethod
