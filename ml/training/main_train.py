@@ -3,10 +3,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 
+# --- LẤY DỮ LIỆU TỪ DATABASE ---
+from ml.training.sync_data_from_db import (
+    sync_database_to_training_data
+)
+
+print("=== BƯỚC 1: ĐỒNG BỘ DỮ LIỆU TỪ DB ===")
+sync_database_to_training_data()
+print("Đã cập nhật xong các file CSV tĩnh (movies.csv, user_features.csv, ...)")
+
 # --- LẤY DỮ LIỆU TỪ FILE DATASET_LOADER ---
 from ml.training.dataset_loader import (
     train_dataset, val_dataset, test_dataset, 
-    test_data, NUM_MOVIES
+    test_data, NUM_MOVIES,
+    user_features_df,
+    PROCESSED_DATA_PATH
 )
 
 # --- LẤY MÔ HÌNH TỪ FILE RECOMMENDER_MODEL ---
@@ -38,6 +49,11 @@ history = model.fit(
 
 print("Training finished! Testing model...")
 model.evaluate(test_dataset)
+
+user_features_df.to_csv(os.path.join(PROCESSED_DATA_PATH, "user_features.csv"), index=False)
+    
+print(f"Đã cập nhật file {os.path.join(PROCESSED_DATA_PATH, 'user_features.csv')} thành công!")
+print(f"Tổng số User hiện tại hệ thống nhận diện được: {len(user_features_df)}")
 
 if __name__ == "__main__":
     train_loss = history.history['loss']
