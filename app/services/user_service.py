@@ -124,7 +124,7 @@ class UserService:
     def add_to_favourites(user_id, movie):
         movie_id = movie.get("id")
         title = movie.get("title")
-        genre_ids = [g["id"] for g in movie.get("genres", [])]
+        genre_ids = movie.get("genres")
 
         try:
             user = User.query.get(user_id)
