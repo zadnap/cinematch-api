@@ -11,6 +11,7 @@ class UserService:
     def _upsert_movie_and_favourite(user_id, movie_data):
         movie_id = movie_data.get('id')
         movie_title = movie_data.get('title')
+        movie_year = movie_data.get('year')
         movie_genres = movie_data.get('genres', [])
 
         if not movie_id or not movie_title:
@@ -18,7 +19,7 @@ class UserService:
 
         movie = Movie.query.get(movie_id)
         if not movie:
-            movie = Movie(id=movie_id, title=movie_title)
+            movie = Movie(id=movie_id, title=movie_title, release_year=movie_year)
             if movie_genres:
                 db_genres = Genre.query.filter(Genre.id.in_(movie_genres)).all()
                 movie.genres.extend(db_genres)

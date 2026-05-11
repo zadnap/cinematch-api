@@ -61,6 +61,7 @@ class Movie(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False, index=True)
+    release_year = db.Column(db.Integer, index=True)
     genres = db.relationship(
         'Genre',
         secondary=movie_genres,
