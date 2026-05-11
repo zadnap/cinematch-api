@@ -1,17 +1,19 @@
-import os
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-
-import pandas as pd
 import numpy as np
 import tensorflow as tf
 import tensorflow_recommenders as tfrs
-from tensorflow.keras.layers import Flatten, Input, Embedding, Dense, Dropout, Concatenate, Dot, UnitNormalization
-from tensorflow.keras.models import Model
-from tensorflow.keras.regularizers import l1, l2
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+from keras.optimizers import Adam
+from keras.layers import (
+    Flatten,
+    Input,
+    Embedding,
+    Dense,
+    Dropout,
+    Concatenate,
+    UnitNormalization,
+)
+from keras.models import Model
+from keras.regularizers import l2
 from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
 
 # --- LẤY BIẾN TỪ FILE DATASET_LOADER ---
 from ml.training.dataset_loader import (
@@ -124,4 +126,4 @@ class TwoTowerModel(tfrs.Model):
 
 model = TwoTowerModel(user_model, movie_model, movie_dataset)
 
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001))
+model.compile(optimizer=Adam(learning_rate=0.001))
