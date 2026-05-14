@@ -38,9 +38,11 @@ def create_app():
         from app.routes.auth_routes import auth_bp
         from app.routes.movie_routes import movies_bp
         from app.routes.user_routes import user_bp
+        from app.routes.training_data_routes import training_data_bp
 
         app.register_blueprint(auth_bp, url_prefix="/auth")
         app.register_blueprint(movies_bp, url_prefix="/movies")
         app.register_blueprint(user_bp, url_prefix="/user")
+        app.register_blueprint(training_data_bp, url_prefix="/training-data")
 
     return app

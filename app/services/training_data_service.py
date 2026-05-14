@@ -3,8 +3,6 @@ from init_db import GENRES
 from sqlalchemy.orm import joinedload
 from app.utils.format_genre import format_genres
 
-ID_OFFSET = 200947
-
 class TrainingDataService:
     @staticmethod
     def get_user_features(user_id):
@@ -19,8 +17,6 @@ class TrainingDataService:
         avg_vector = [
             pref_map.get(gid, 0.0) for gid, _ in GENRES
         ]
-
-        user_id = user_id + ID_OFFSET
 
         return [user_id] + avg_vector
     
@@ -45,7 +41,7 @@ class TrainingDataService:
         favourites = Favourite.query.all()
         return [
             [
-                fav.user_id + ID_OFFSET,
+                fav.user_id,
                 fav.movie_id,
                 int(fav.added_at.timestamp())
             ]
