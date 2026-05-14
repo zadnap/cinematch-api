@@ -1,6 +1,3 @@
 .env
 venv/
-ml/data/
-ml/artifacts/
 __pycache__
-requirements.local.txt

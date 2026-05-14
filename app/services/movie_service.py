@@ -1,8 +1,6 @@
 from app.clients.tmdb_client import TMDBClient
 from concurrent.futures import ThreadPoolExecutor
 from app.utils.pagination import normalize_page
-from app.services.recommend_service import RecommendService
-from app.utils.rerank_movies import rerank_movies
 from app.utils.response import success, error
 from datetime import datetime
 
@@ -380,7 +378,8 @@ class MovieService:
         page = normalize_page(page)
 
         try:
-            rec_ids = RecommendService.recommend(user_id, top_k=200)
+            # TODO: Fetch data from cinematch-ml-service API
+            rec_ids = []
 
             if not rec_ids:
                 return success(
