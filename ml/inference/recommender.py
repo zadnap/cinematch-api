@@ -15,7 +15,6 @@ from ml.training.dataset_loader import (
 
 from ml.training.data_preprocessing import (
     movie2movie_encoded, movies_df,
-    ratings_df
 )
 
 from app.services.trainning_data_service import ID_OFFSET, TrainingDataService
@@ -34,25 +33,12 @@ all_movie_ids = np.arange(NUM_MOVIES)
 GLOBAL_MOVIE_VECTORS = GLOBAL_MODEL.movie_model.predict(all_movie_ids, batch_size=4096, verbose=1)
 print("Khởi tạo hệ thống thành công! Đã sẵn sàng nhận request.")
 
-def prepare_global_movie_scores(ratings_df, movies_df, movie2movie_encoded):
-    rating_counts = ratings_df.groupby('movieId').size().reset_index(name='num_ratings')
-    ratings_avg = ratings_df.groupby('movieId')['rating'].mean().reset_index(name='avg_rating')
-    
-    movie_scores_df = pd.merge(rating_counts, movies_df, on='movieId')
-    movie_scores_df = pd.merge(ratings_avg, movie_scores_df, on='movieId')
-    
-    # Tính score
-    movie_scores_df['score'] = movie_scores_df['num_ratings'] * movie_scores_df['avg_rating']
-    
-    # Map encoded_id
-    movie_scores_df['encoded_id'] = movie_scores_df['movieId'].map(movie2movie_encoded)
-    
-    # Sắp xếp theo điểm số giảm dần
-    movie_scores_df = movie_scores_df.sort_values(by='score', ascending=False)
-    
-    return movie_scores_df
-
-GLOBAL_MOVIE_SCORES = prepare_global_movie_scores(ratings_df, movies_df, movie2movie_encoded)
+GLOBAL_MOVIE_SCORES = pd.read_csv(
+    os.path.join(
+        PROCESSED_DATA_PATH,
+        "global_movie_scores.csv"
+    )
+)
 
 def get_best_k_films_for_user(user_id, k=10):
     liked_genres_set = set()
