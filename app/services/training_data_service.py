@@ -6,45 +6,6 @@ from app.utils.response import success, error
 
 class TrainingDataService:
     @staticmethod
-    def get_user_features(user_id):
-        try:
-            user = User.query.get(user_id)
-
-            if not user:
-                return error(
-                    "USER_NOT_FOUND",
-                    f"User {user_id} not found",
-                    404
-                )
-
-            pref_map = {
-                pref.genre_id: pref.avg_score
-                for pref in user.genre_preferences
-            }
-
-            avg_vector = [
-                pref_map.get(gid, 0.0)
-                for gid, _ in GENRES
-            ]
-
-            result = [user_id] + avg_vector
-
-            return success(
-                result,
-                "User features fetched successfully"
-            )
-
-        except Exception as e:
-            print(f"[GET USER FEATURES ERROR] {e}")
-
-            return error(
-                "SERVER_ERROR",
-                "Server error",
-                500
-            )
-
-
-    @staticmethod
     def get_all_user_features():
         try:
             users = User.query.all()

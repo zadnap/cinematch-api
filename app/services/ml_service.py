@@ -21,7 +21,7 @@ class MLService:
         total=3,
         backoff_factor=1,
         status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["GET"]
+        allowed_methods=["POST"]
     )
 
     session.mount(
@@ -30,13 +30,18 @@ class MLService:
     )
 
     @staticmethod
-    def get_recommendations(user_id, top_k=100):
+    def get_recommendations(
+        user_id,
+        user_features,
+        top_k=100
+    ):
         try:
-            response = MLService.session.get(
+            response = MLService.session.post(
                 f"{ML_SERVICE_URL}/recommend",
-                params={
+                json={
                     "user_id": user_id,
-                    "top_k": top_k
+                    "top_k": top_k,
+                    "user_features": user_features
                 },
                 timeout=MLService.TIMEOUT
             )

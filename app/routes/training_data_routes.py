@@ -3,12 +3,6 @@ from app.services.training_data_service import TrainingDataService
 
 training_data_bp = Blueprint("training-data", __name__)
 
-@training_data_bp.route("/user-features/<int:user_id>", methods=["GET"])
-def get_user_features(user_id):
-    result, status_code = TrainingDataService.get_user_features(user_id)
-    return jsonify(result), status_code
-
-
 @training_data_bp.route("/user-features/all", methods=["GET"])
 def get_all_user_features():
     result, status_code = TrainingDataService.get_all_user_features()

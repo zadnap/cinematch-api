@@ -4,6 +4,8 @@ from app.utils.pagination import normalize_page
 from app.utils.response import success, error
 from datetime import datetime
 from app.services.ml_service import MLService
+from init_db import GENRES
+from app.models import User
 
 class MovieService:
     @staticmethod
@@ -379,8 +381,18 @@ class MovieService:
         page = normalize_page(page)
 
         try:
+            user = User.query.get(user_id)
+            pref_map = {
+                pref.genre_id: pref.avg_score
+                for pref in user.genre_preferences
+            }
+            user_features = [
+                pref_map.get(gid, 0.0)
+                for gid, _ in GENRES
+            ]
             rec_ids = MLService.get_recommendations(
                 user_id=user_id,
+                user_features=user_features,
                 top_k=200
             )
 
