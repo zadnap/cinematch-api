@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from app.utils.pagination import normalize_page
 from app.utils.response import success, error
 from datetime import datetime
+from app.services.ml_service import MLService
 
 class MovieService:
     @staticmethod
@@ -378,8 +379,10 @@ class MovieService:
         page = normalize_page(page)
 
         try:
-            # TODO: Fetch data from cinematch-ml-service API
-            rec_ids = []
+            rec_ids = MLService.get_recommendations(
+                user_id=user_id,
+                top_k=200
+            )
 
             if not rec_ids:
                 return success(
