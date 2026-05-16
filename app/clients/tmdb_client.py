@@ -3,6 +3,7 @@ import requests
 
 class TMDBClient:
     BASE_URL = "https://api.themoviedb.org/3"
+    session = requests.Session()
 
     @staticmethod
     def get(endpoint, params=None):
@@ -11,15 +12,18 @@ class TMDBClient:
         if not API_KEY:
             raise Exception("Missing TMDB API key")
 
-        if params is None:
-            params = {}
+        params = params or {}
 
-        params["api_key"] = API_KEY
-        params["language"] = "en-US"
+        params.update({
+            "api_key": API_KEY,
+            "language": "en-US"
+        })
 
-        url = f"{TMDBClient.BASE_URL}{endpoint}"
+        response = TMDBClient.session.get(
+            f"{TMDBClient.BASE_URL}{endpoint}",
+            params=params,
+            timeout=(3, 5)
+        )
 
-        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
-
         return response.json()
