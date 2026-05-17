@@ -9,8 +9,8 @@ class TrainingDataService:
     def get_all_user_features():
         try:
             users = User.query.all()
-
-            result = []
+            header_row = ['user_id'] + [gname for _, gname in GENRES]
+            result = [header_row]
 
             for user in users:
                 pref_map = {
